@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Podsumowanie</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fragment+Mono&display=swap" rel="stylesheet">
+    
+    <style>
+    
+    	body{
+        	padding: 0;
+            margin: 0;
+            font-family: "Fragment Mono", monospace;
+            overflow-y:scroll;
+        
+        }
+        table {
+            border-collapse: collapse;
+            width: 95%;
+            margin: 0 auto;
+            margin-bottom: 50px;
+        }
+
+        th, td {
+            border: 2px solid #000; /* Black border */
+            padding: 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #53ae26; /* Bright green background for headers */
+            color: #000; /* White text color */
+            cursor: pointer;
+        }
+        
+        .selected{
+        	text-decoration: underline;
+        }
+        
+        th:hover {
+        	background-color: #7fd952;
+            transition: background-color 0.4s;
+            text-decoration: underline;
+        }
+        
+
+        /* White background for odd rows */
+        tr:nth-child(even) td {
+            background-color: #f2f2f2;
+        }
+
+        tr:last-child td {
+            background-color: #53ae26;
+        }
+
+        /* Hover effect */
+        tr:hover td {
+            background-color: #b1e897; /* Light gray background on hover */
+            transition: background-color 0.2s; /* Smooth transition */
+        }
+
+        tr:last-child{
+            background-color: #53ae26;/* Bright green background for headers */
+            color: #000; /* White text color */
+        }
+        
+        textarea{
+        	width: 100%;
+            margin: 0;
+            resize: none;
+            padding: 15px;
+            box-sizing: border-box;
+             outline: none;
+             height:100%;
+             min-height: 300px;
+        }
+        button {
+		    font-family: "Fragment Mono", monospace;
+		    padding: 25px;
+		    margin: 0 auto;
+		    width: 100%;
+		    height: 70%;
+		    font-size: 50px;
+		    letter-spacing: 5px;
+		    cursor: pointer;
+		    border-radius: 0px;
+		    border: none; /* Remove border to enhance the effect */
+		    background-color: black;
+		    color: white;
+		    transition: background-color 0.1s, letter-spacing 0.2s;
+		}
+
+		button:hover {
+		    letter-spacing: 6px
+		}
+
+		button:active {
+		    background-color: #53ae26;
+		    letter-spacing: 4px;
+		}
+
+        .fixIt{
+            position: fixed;
+            width: 100%;
+        }
+        .the_box{
+            
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            margin-bottom: 50px;
+        }
+        .left_side{
+            width:50%;
+        }
+        .right_side{
+            width:50%;
+        }
+        .right_side input{
+            width: 50%;
+            height:30%;
+            padding: 10px;
+            outline: 1px solid black;
+            border:none;
+            box-sizing: border-box;
+            font-size: 35px;
+            text-align: center;
+
+        }
+        h1{
+            text-align: center;
+            background-color: white;
+
+        }
+        .smaller{
+            font-size: 10px;
+            font-style: italic;
+        }
+        .heightt{
+            height: 450px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="fixIt">
+        <h1>V-LIFE BUSINESS SUMMARY GENERATOR <span class="smaller">by _kinslayer</span></h1>
+
+        <div class="the_box">
+            <div class="left_side">
+                <textarea oninput="getDates()" id="inputData" rows="10" cols="100" placeholder="Tutaj wklej dane ..."></textarea>
+            </div>
+            <div class="right_side">
+                <input type="date" id="start"/><input type="date" id="end"/>
+                <button onclick="generateData()">GENERUJ PODSUMOWANIE</button>
+            </div>
+
+        </div>
+
+    </div>
+    <div class="heightt"></div>
+    
+    <!-- test -->
+    
+
+    
+    
+    <table id="employeeTable">
+        <thead>
+            <tr title="Sortuj">
+                <th onclick="sortTable('r_name')">Imię i nazwisko</th>
+                <th onclick="sortTable('r_moneymade')">Przychód</th>
+                <th onclick="sortTable('r_hourrate')">Godzinówka</th>
+                <th onclick="sortTable('r_financing')">Estymowane dofinansowanie</th>
+                <th onclick="sortTable('r_bills')">Liczba rachunków</th>
+                <th onclick="sortTable('r_time')">Czas w pracy</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script>
+    
+    	var recordsData;
+    	var sum_financing;
+        function generateData() {
+            var inputData = document.getElementById("inputData").value;
+            var extractedData = extractData(inputData);
+            
+            recordsData = processExtractedData(extractedData);
+            
+            sortTable('r_time');
+            
+            generateTableRows(recordsData);
+        }
+
+        function extractData(inputData) {
+            var lines = inputData.split('\n');
+            var extractedLines = [];
+            var capture = false;
+
+            for (var i = 0; i < lines.length; i++) {
+                var line = lines[i];
+                if (line.includes("Podsumowanie Dnia")) {
+                    capture = true;
+                    continue;
+                }
+                if (capture && line.includes("V-LIFE")) {
+                    capture = false;
+                }
+                if (capture) {
+                    extractedLines.push(line);
+                }
+            }
+
+            return extractedLines;
+        }
+
+        function trimDataToGivenDates(data, startDate, endDate){
+
+            var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+            var startYear = startDate.split("-")[0];
+            var startMonth = startDate.split("-")[1];
+            var startDay = startDate.split("-")[2];
+
+            var endYear = endDate.split("-")[0];
+            var endMonth = endDate.split("-")[1];
+            var endDay = endDate.split("-")[2];
+
+            var trimStart = 0;
+            var trimEnd = data.length;
+
+            for(let i = 0; i < data.length; i++){
+                if(data[i].includes(startYear) && data[i].includes(months[parseInt(startMonth)-1] + " " + startDay) && data[i-1].includes("Saldo Konta")){
+                    for(let j = i; j>=0; j--){
+                        if(data[j].includes("Przych")){
+                            trimStart = j;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            for(let i = data.length-1; i >= 0; i--){
+                if(data[i].includes(endYear) && data[i].includes(months[parseInt(endMonth)-1] + " " + endDay) && data[i-1].includes("💷")){
+                    trimEnd = data.length - i;
+                    break;
+                }
+            }
+            data = data.slice(0, -trimEnd);
+            data = data.slice(trimStart);
+
+            return data;
+
+        }
+        
+        function processExtractedData(extractedData) {
+            var records = [];
+            
+            var startDate = document.getElementById("start").value;
+            var endDate = document.getElementById("end").value;
+
+            extractedData = trimDataToGivenDates(extractedData, startDate, endDate);
+
+            sum_financing = 0;
+            
+
+            extractedData.forEach(function(line) {
+
+            	if (line.includes("Dofinansowanie")){
+            		sum_financing += parseInt(line.split(": ")[1]);
+            	}
+
+                else if (line.includes("💷")) {
+                    var name = line.split(" - ")[0];
+                    var toDoLine = line.split(" - ")[1];
+                    
+                    var moneyMade = toDoLine.indexOf("💵");
+                    var bills = toDoLine.indexOf("📝");
+                    var hourRate = toDoLine.indexOf("💷");
+                    var time = toDoLine.indexOf("⏱️");
+
+                    
+
+
+                    moneyMade = parseInt(toDoLine.substring(moneyMade+4, bills-1));
+                    bills = parseInt(toDoLine.substring(bills+2, hourRate-1));
+                    hourRate = parseInt(toDoLine.substring(hourRate+4, time-1));
+                    time = parseInt(calculateWorkedMinutes(toDoLine.substring(time+2)));
+                    
+
+                    var financing = Math.floor(time / 10) * 100;
+                    let found = false;
+                    for(let i =0; i < records.length; i++){
+                    
+                      if(records[i].r_name == name){
+                      	records[i].r_moneymade += moneyMade;
+                        records[i].r_bills += bills;
+                        records[i].r_hourrate += hourRate;
+                        records[i].r_time += time;
+                        records[i].r_financing += financing;
+                        found = true;
+                        break;
+                      }
+
+                    }
+                    
+                    if(!found){
+                    	record = { r_name: name, r_moneymade: moneyMade, r_bills: bills, r_hourrate: hourRate, r_time: time, r_financing: financing }
+                        records.push(record);
+                    }
+                    	
+                }
+            });
+
+            return records; 
+        }
+        
+        
+
+  function convertTextToDate(text) {
+      var months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      var parts = text.split(" ");
+
+      var day = parseInt(parts[2]); // Dzień
+      if(day<10) day = "0"+day;
+      var monthIndex = months.indexOf(parts[1])+1; // Indeks miesiąca
+      if(monthIndex<10) monthIndex = "0"+monthIndex;
+      var year = parseInt(parts[4]); // Rok
+
+      var date = new Date(year, monthIndex, day);
+
+      return year+"-"+monthIndex+"-"+day;
+  }
+  
+   function generateTableRows(data) {
+        var tbody = document.querySelector('#employeeTable tbody');
+        tbody.innerHTML = ''; // Clear existing rows
+
+        var moneyMade = 0;
+        var hourRate = 0;
+        var bills = 0;
+        var time = 0;
+        var financing = 0;
+        
+        // Iterate over each object in the data array
+        data.forEach(function(item) {
+
+            moneyMade += item.r_moneymade;
+            hourRate += item.r_hourrate;
+            bills += item.r_bills;
+            time += item.r_time;
+            //financing += item.r_financing;
+
+
+            var row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.r_name}</td>
+                <td>${item.r_moneymade}$</td>
+                <td>${item.r_hourrate}$</td>
+                <td>~${item.r_financing}$</td>
+                <td>${item.r_bills}</td>
+                <td>${getTimeFromMinutes(item.r_time)}</td>
+            `;
+            tbody.appendChild(row);
+        });
+
+        var row = document.createElement('tr');
+            row.innerHTML = `
+                <td><b>SUMA</b></td>
+                <td>${moneyMade}$</td>
+                <td>${hourRate}$</td>
+                <td>${sum_financing}$</td>
+                <td>${bills}</td>
+                <td>${getTimeFromMinutes(time)}</td>
+            `;
+            tbody.appendChild(row);
+    }
+  
+function calculateWorkedMinutes(timeString) {
+    var timeComponents = timeString.split(':');
+
+    var hours = parseInt(timeComponents[0]);
+    var minutes = parseInt(timeComponents[1]);
+
+    var totalMinutes = hours * 60 + minutes;
+
+    return totalMinutes;
+}
+
+	function sortTable(columnName) {
+
+        recordsData.sort((a, b) => (a[columnName] < b[columnName]) ? 1 : -1);
+        generateTableRows(recordsData);
+    }
+    
+    function getTimeFromMinutes(time) {
+        return Math.floor(time / 60) + "h " + time % 60 + "min";
+    }
+    function getDates() {
+
+        var inputData = document.getElementById("inputData").value.split('\n');
+        var firstDate = 0;
+        var lastDate = 0;
+
+        for(let i = 0;i < inputData.length; i++){
+            if(inputData[i].includes("Saldo Konta: ")){
+                firstDate = inputData[i+1];
+                break;
+            }
+        }
+
+        for(let i = inputData.length-1; i >= 0; i--){
+            if(inputData[i].includes("Saldo Konta: ")){
+                lastDate = inputData[i+1];
+                break;
+            }
+        }
+
+        if(firstDate !=0 && lastDate !=0){
+            firstDate = convertTextToDate(firstDate);
+            lastDate = convertTextToDate(lastDate);
+
+            document.getElementById("start").value = firstDate;
+            document.getElementById("start").max = lastDate;
+            document.getElementById("start").min = firstDate;
+            document.getElementById("end").value = lastDate;
+            document.getElementById("end").max = lastDate;
+            document.getElementById("end").min = firstDate;
+        }
+
+
+    }
+
+    </script>
+</body>
+</html>
